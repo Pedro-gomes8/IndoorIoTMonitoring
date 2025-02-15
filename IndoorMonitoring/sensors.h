@@ -11,13 +11,13 @@ class Sensors{
    * makes a measurement with all sensors the class is responsible for and saves
    * it in the given data pointer
    * @param measurement_t* data  were the measurements taken are registered
-   * @return errorCode returns -1 if an error occured and 0 otherwise
+   * @return errorCode returns 0 if an error occured and 1 otherwise
    */
   int measure(measurement_t * data);
 
   /*
    * Initializes the sensors in the class is responsible for
-   * @return errorCode returns -1 if an error occured and 0 otherwise
+   * @return errorCode returns 0 if an error occured and 1 otherwise
    */
   int begin();
 
