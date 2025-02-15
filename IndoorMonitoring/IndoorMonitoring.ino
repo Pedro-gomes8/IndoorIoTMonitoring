@@ -1,6 +1,5 @@
 
 #include <SPI.h>
-#include <SD.h>
 #include <Wire.h>
 
 // ------- SENSORS -----
@@ -9,6 +8,7 @@
 #include "hardware.h"
 #include "measurements.h"
 #include "sensors.h"
+#include "buffer.h"
 
 #define SERIAL_BAUDRATE 115200
 #define BLUETOOTH_BAUDRATE 9600
@@ -18,6 +18,7 @@ SoftwareSerial mySerial(9,8); // RX, TX
 String w;
 
 Sensors sensors;
+Buffer buffer;
 
 // ------- SD ------
 File myFile;
@@ -49,16 +50,11 @@ void setup() {
     Serial.println("Failed");
   }
 
-  // --- SD CARD
-  Serial.print("Initializing SD card: ");
-  if (!SD.begin(CS)){
+
+  Serial.println("Initializing Buffer ----");
+  if(!buffer.begin()){
     Serial.println("Failed");
-    while(1) ;
   }
-  Serial.println("OK");
-
-
-  // bmp.setSampling();
 
   pinMode(MY_LED_BUILTIN,OUTPUT);
 }
@@ -70,6 +66,9 @@ void loop() {
 
   measurement_t measure;
   sensors.measure(&measure);
+  if(! buffer.save_measurement(&measure)){
+    Serial.println("FAILED TO SAVE");
+  }
   print_measurement(&measure);
 
 
