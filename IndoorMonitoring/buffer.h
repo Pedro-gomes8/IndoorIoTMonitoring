@@ -8,11 +8,14 @@
 
 class Buffer{
   public:
+  
+  const char *savePath;
+
   /*
    * Initializes the sd card reader
    * @return errorCode returns 0 if an error occured and 1 otherwise
    */
-  int begin();
+  int begin(const char* saveFile);
 
   /*
    * saves a measurement to the buffer and, if necessary, sends the buffer to the sd
@@ -20,6 +23,7 @@ class Buffer{
    * @return errorCode returns 0 if an error occured and 1 otherwise
    */
   int save_measurement(measurement_t* data);
+  int send_BT_data(SoftwareSerial &BT, int chunkSize);
 
   private:
   int buffer_pos;
@@ -29,7 +33,9 @@ class Buffer{
    * writes everything that's on the buffer to the sd card
    * @return errorCode returns 0 if an error occured and 1 otherwise
    */
-  int save_buffer_to_sd();
+  int save_buffer_to_sd(const char *filepath);
+
+
 };
 
 

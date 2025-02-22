@@ -6,9 +6,9 @@ class Timer{
   public:
     short seconds;
     Timer();
-    Timer(short seconds); // Initializer
+    Timer(short seconds); 
 
-    // Initializes Deep Sleep Time
+    // Initializes watchdog
     void init(short seconds);
 
     // Re-enables the timer

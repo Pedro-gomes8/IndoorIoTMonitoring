@@ -1,34 +1,29 @@
-
 #include <SPI.h>
 #include <Wire.h>
 
-// ------- SENSORS -----
 #include <SoftwareSerial.h>
 
+// ------- AUX LIBRARIES -----
 #include "hardware.h"
 #include "measurements.h"
 #include "sensors.h"
 #include "buffer.h"
 #include "Timer.h"
-#define SERIAL_BAUDRATE 115200
+
+
+// ------- CONSTANTS ------
+#define SERIAL_BAUDRATE 19200
 #define BLUETOOTH_BAUDRATE 9600
-#define CS 10
 #define SLEEPTIME 8
 
-// ------- FUNCTIONAL LIBRARIES ----
-#include <avr/wdt.h>
-#include <avr/sleep.h>
-#include <avr/power.h>
 
+// ------- INITIALIZATION ------
 SoftwareSerial Bluetooth(9, 8); // RX, TX
 String w;
 
 Sensors sensors;
 Buffer buffer;
 Timer Sleep;
-
-// ------- SD ------
-File myFile;
 
 void print_measurement(measurement_t *measure)
 {
@@ -47,41 +42,51 @@ void print_measurement(measurement_t *measure)
 void setup()
 {
   // put your setup code here, to run once:
-  Serial.begin(115200);
-  while (!Serial)
+  Wire.begin();
+  Serial.begin(SERIAL_BAUDRATE);
+  Bluetooth.begin(BLUETOOTH_BAUDRATE);
+  while (!Serial && !Bluetooth)
   {
     ; // Wait for serial port to connect
   }
-
   Serial.println("Initializing Sensors ----");
 
   /* --------------------------------------
    *           SENSORS
    *. --------------------------------------
    */
+  // delay(10);
   if (!sensors.begin())
   {
     Serial.println("Failed");
   }
 
   Serial.println("Initializing Buffer ----");
-  if (!buffer.begin())
+  if (!buffer.begin("data.bin"))
   {
     Serial.println("Failed");
   }
 
-  // --- SD CARD
-  Serial.print("Initializing SD card: ");
-  if (!SD.begin(CS))
-  {
-    Serial.println("Failed");
-    while (1)
-      ;
-  }
 
   pinMode(MY_LED_BUILTIN, OUTPUT);
 
   Sleep.init(SLEEPTIME);
+}
+
+
+void handleMeasurement(){
+  static short cycles = 0;
+    if (cycles == 7){ // Measure: Base sleep of 8 seconds -> 8x7 = 56 secs =~ 1min. Speed of 4 = 28secs.
+      measurement_t measure;
+      sensors.measure(&measure);
+      if (!buffer.save_measurement(&measure))
+      {
+        Serial.println("FAILED TO SAVE");
+      }
+      print_measurement(&measure);
+      cycles = 0;
+      buffer.send_BT_data(Bluetooth, 20);
+    } else cycles++;
 }
 
 ISR(WDT_vect)
@@ -89,26 +94,8 @@ ISR(WDT_vect)
   // Do nothing
 }
 
-void loop()
-{
-  // put your main code here, to run repeatedly:
-  digitalWrite(MY_LED_BUILTIN, HIGH); // sets the digital pin 13 on
-  delay(1000);                        // waits for a second
 
-  measurement_t measure;
-  sensors.measure(&measure);
-  if (!buffer.save_measurement(&measure))
-  {
-    Serial.println("FAILED TO SAVE");
-  }
-  print_measurement(&measure);
-
-  // Sleep.deepSleep();
-  // Serial.println("Woke up");
-  Serial.flush();
-  // Serial.println("Ready to receive data");
-  delay(2000);
-
+void handleRequest(){
   if (Bluetooth.available())
   {
     w = Bluetooth.readString();
@@ -117,6 +104,27 @@ void loop()
     Serial.flush();
     sei();
   }
-  Bluetooth.println("j");
-  // Sleep.reset();
+}
+
+void loop()
+{
+  // put your main code here, to run repeatedly:
+  // digitalWrite(MY_LED_BUILTIN, HIGH); // sets the digital pin 13 on
+  // delay(1000)                        // waits for a second
+
+  // Check if it's time to measure.
+  handleMeasurement();
+  // Sleeps
+  Sleep.deepSleep();
+  Serial.println("Woke up");
+  Serial.flush();
+
+  // Sends HANDSHAKE availability
+  Bluetooth.println("Ready"); 
+  delay(1000); // Stays up for 1sec.
+
+  // Handles request
+  handleRequest();
+
+  Sleep.reset();
 }
