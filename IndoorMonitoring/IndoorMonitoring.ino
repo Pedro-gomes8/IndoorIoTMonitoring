@@ -1,24 +1,29 @@
 
 #include <SPI.h>
 #include <Wire.h>
+#include <SoftwareSerial.h>
 
 // ------- SENSORS -----
-#include <SoftwareSerial.h>
 
 #include "hardware.h"
 #include "measurements.h"
 #include "sensors.h"
 #include "buffer.h"
+// --- Watchdog
+#include "Timer.h"
+
 
 #define SERIAL_BAUDRATE 115200
 #define BLUETOOTH_BAUDRATE 9600
+#define SLEEPTIME 8
 
 
-SoftwareSerial mySerial(9,8); // RX, TX
+SoftwareSerial Bluetooth(9,8); // RX, TX
 String w;
 
 Sensors sensors;
 Buffer buffer;
+Timer Sleep;
 
 // ------- SD ------
 File myFile;
@@ -40,8 +45,8 @@ void print_measurement(measurement_t* measure){
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(SERIAL_BAUDRATE);
-  mySerial.begin(BLUETOOTH_BAUDRATE);
-  while (!Serial){; // Wait for serial port to connect
+  Bluetooth.begin(BLUETOOTH_BAUDRATE);
+  while (!Serial && !Bluetooth){; // Wait for serial port to connect
   }
 
   Serial.println("Initializing Sensors ----");
@@ -56,13 +61,20 @@ void setup() {
     Serial.println("Failed");
   }
 
-  pinMode(MY_LED_BUILTIN,OUTPUT);
+  Sleep.init(SLEEPTIME);
+  // pinMode(MY_LED_BUILTIN,OUTPUT);
 }
+
+ISR(WDT_vect){
+  // Do nothing
+}
+
+
 
 void loop() {
   // put your main code here, to run repeatedly:
-  digitalWrite(MY_LED_BUILTIN, HIGH); // sets the digital pin 13 on
-  delay(1000);            // waits for a second
+  // digitalWrite(MY_LED_BUILTIN, HIGH); // sets the digital pin 13 on
+  // delay(1000);            // waits for a second
 
   measurement_t measure;
   sensors.measure(&measure);
@@ -71,19 +83,22 @@ void loop() {
   }
   print_measurement(&measure);
 
+  Sleep.deepSleep();
+  delay(2000);
 
-  if (mySerial.available()) {
-    w = mySerial.readString();
+  if (Bluetooth.available()) {
+    w = Bluetooth.readString();
     Serial.println(w);  //PC
     delay(10);
     //commands with Serial.println(); show on pc serial monitor
   }
 
-  mySerial.println("This is a test run");
-  mySerial.println("Congratulations! Device Connected!");
-  mySerial.println();
+  Bluetooth.println("This is a test run");
+  Bluetooth.println("Congratulations! Device Connected!");
+  Bluetooth.println();
 
 
   digitalWrite(MY_LED_BUILTIN, LOW);  // sets the digital pin 13 off
   delay(2000);            // waits for a second
+  Sleep.reset();
 }
