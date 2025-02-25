@@ -2,9 +2,9 @@
 #define MEASUREMENTS_H_
 
 typedef struct{
+  int id;
   float humidity;
   float temperature;
-  float TVOC;
   float eCO2;
   float pressure;
 } measurement_t;

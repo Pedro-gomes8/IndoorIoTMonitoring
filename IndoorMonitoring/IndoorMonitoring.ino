@@ -1,27 +1,32 @@
 
 #include <SPI.h>
 #include <Wire.h>
-
-// ------- SENSORS -----
 #include <SoftwareSerial.h>
+// ------- SENSORS -----
 
 #include "hardware.h"
 #include "measurements.h"
 #include "sensors.h"
 #include "buffer.h"
 
+
+// --- Watchdog
+#include "Timer.h"
+
+
 #define SERIAL_BAUDRATE 115200
 #define BLUETOOTH_BAUDRATE 9600
+#define SLEEPTIME 8
 
 
-SoftwareSerial mySerial(9,8); // RX, TX
+// SoftwareSerial Bluetooth(9,8); // RX, TX
 String w;
 
 Sensors sensors;
 Buffer buffer;
+Timer Sleep;
 
 // ------- SD ------
-File myFile;
 
 void print_measurement(measurement_t* measure){
   Serial.print("Humidity: ");
@@ -29,7 +34,6 @@ void print_measurement(measurement_t* measure){
   Serial.print(", Temperature: ");
   Serial.print(measure->temperature);
   Serial.print(", TVOC: ");
-  Serial.print(measure->TVOC);
   Serial.print(", eCO2: ");
   Serial.print(measure->eCO2);
   Serial.print(", pressure: ");
@@ -40,8 +44,8 @@ void print_measurement(measurement_t* measure){
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(SERIAL_BAUDRATE);
-  mySerial.begin(BLUETOOTH_BAUDRATE);
-  while (!Serial){; // Wait for serial port to connect
+  Bluetooth.begin(BLUETOOTH_BAUDRATE);
+  while (!Serial && !Bluetooth){; // Wait for serial port to connect
   }
 
   Serial.println("Initializing Sensors ----");
@@ -52,38 +56,43 @@ void setup() {
 
 
   Serial.println("Initializing Buffer ----");
-  if(!buffer.begin()){
+  if(!buffer.begin("data.bin")){
     Serial.println("Failed");
   }
 
-  pinMode(MY_LED_BUILTIN,OUTPUT);
+  Sleep.init(SLEEPTIME);
+
 }
 
+ISR(WDT_vect){
+  // Do nothing
+}
+
+
+
 void loop() {
-  // put your main code here, to run repeatedly:
-  digitalWrite(MY_LED_BUILTIN, HIGH); // sets the digital pin 13 on
-  delay(1000);            // waits for a second
 
   measurement_t measure;
   sensors.measure(&measure);
   if(! buffer.save_measurement(&measure)){
     Serial.println("FAILED TO SAVE");
   }
-  print_measurement(&measure);
-
-
-  if (mySerial.available()) {
-    w = mySerial.readString();
-    Serial.println(w);  //PC
-    delay(10);
-    //commands with Serial.println(); show on pc serial monitor
+  Sleep.deepSleep();
+  delay(2000);
+  // Serial.println("OK");
+  if (buffer.buffer_pos == 3){
+    buffer.send_BT_data();
   }
+  // if (Bluetooth.available()) {
+  //   w = Bluetooth.readString();
+  //   Serial.println(w);  //PC
+  //   delay(10);
+  //   //commands with Serial.println(); show on pc serial monitor
+  // }
 
-  mySerial.println("This is a test run");
-  mySerial.println("Congratulations! Device Connected!");
-  mySerial.println();
+  
 
 
-  digitalWrite(MY_LED_BUILTIN, LOW);  // sets the digital pin 13 off
-  delay(2000);            // waits for a second
+  Sleep.reset();
+
 }
