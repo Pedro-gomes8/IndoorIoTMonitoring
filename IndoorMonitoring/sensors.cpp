@@ -37,11 +37,10 @@ int Sensors::measure(measurement_t* data){
   data->temperature = this->si.readTemperature();
 
   if (! this->sgp.IAQmeasure()) {
-    Serial.println("Measurement failed");
+    // Serial.println("Measurement failed");
     return -1;
   }
 
-  data->TVOC = this->sgp.TVOC;
   data->eCO2 = this->sgp.eCO2;
 
   data->pressure = this->bmp.readPressure();

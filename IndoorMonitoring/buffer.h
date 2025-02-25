@@ -1,18 +1,26 @@
 #ifndef BUFFER_H_
 #define BUFFER_H_
 
-#define BUFFER_SIZE 8
+#define BUFFER_SIZE 4
 
-#include <SD.h>
+
+#include <SdFat.h>
 #include "measurements.h"
 
-class Buffer{
-  public:
+class Buffer {
+public:
+
+  measurement_t measurement_buffer[BUFFER_SIZE];
+  uint8_t binbuffer[18];
+  const char* savePath;
+  int buffer_pos;
+  SdFat sd;
+  SdFile dataFile;
   /*
    * Initializes the sd card reader
    * @return errorCode returns 0 if an error occured and 1 otherwise
    */
-  int begin();
+  int begin(char* saveFile);
 
   /*
    * saves a measurement to the buffer and, if necessary, sends the buffer to the sd
@@ -20,17 +28,18 @@ class Buffer{
    * @return errorCode returns 0 if an error occured and 1 otherwise
    */
   int save_measurement(measurement_t* data);
+  int send_BT_data();
 
-  private:
-  int buffer_pos;
-  measurement_t measurement_buffer[BUFFER_SIZE];
+
+
+private:
 
   /*
    * writes everything that's on the buffer to the sd card
    * @return errorCode returns 0 if an error occured and 1 otherwise
    */
-  int save_buffer_to_sd();
+  int save_buffer_to_sd(char* filepath);
 };
 
 
-#endif // BUFFER_H_
+#endif  // BUFFER_H_
