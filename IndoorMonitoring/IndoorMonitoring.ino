@@ -15,7 +15,7 @@
 
 
 #define SERIAL_BAUDRATE 115200
-#define BLUETOOTH_BAUDRATE 9600
+// #define BLUETOOTH_BAUDRATE 9600
 #define SLEEPTIME 8
 
 
@@ -44,8 +44,8 @@ void print_measurement(measurement_t* measure){
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(SERIAL_BAUDRATE);
-  Bluetooth.begin(BLUETOOTH_BAUDRATE);
-  while (!Serial && !Bluetooth){; // Wait for serial port to connect
+  // Bluetooth.begin(BLUETOOTH_BAUDRATE);
+  while (!Serial){; // Wait for serial port to connect
   }
 
   Serial.println("Initializing Sensors ----");
@@ -80,9 +80,11 @@ void loop() {
   Sleep.deepSleep();
   delay(2000);
   // Serial.println("OK");
-  if (buffer.buffer_pos == 3){
+  if (buffer.buffer_pos == 3){ // Send data every 3 new measures to show on demo
     buffer.send_BT_data();
   }
+
+  
   // if (Bluetooth.available()) {
   //   w = Bluetooth.readString();
   //   Serial.println(w);  //PC
