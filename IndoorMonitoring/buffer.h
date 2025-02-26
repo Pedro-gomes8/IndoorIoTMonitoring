@@ -1,7 +1,7 @@
 #ifndef BUFFER_H_
 #define BUFFER_H_
 
-#define BUFFER_SIZE 4
+#define BUFFER_SIZE 4 
 
 
 #include <SdFat.h>
@@ -28,6 +28,12 @@ public:
    * @return errorCode returns 0 if an error occured and 1 otherwise
    */
   int save_measurement(measurement_t* data);
+
+  /*
+  * Access the file in the SD card in chunks and send its binary contents through the Serial
+  * @return errorCode returns 0 if error
+  */
+  
   int send_BT_data();
 
 

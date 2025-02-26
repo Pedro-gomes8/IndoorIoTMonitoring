@@ -30,7 +30,8 @@ void Timer::init(short seconds){
 
   switch(seconds){
     case 4:
-      WDTCSR = (1 << WDIE) | (1 << WDP2) | (1 << WDP1);
+      // WDIE 1 : Enables Interruption Mode. WDP0 - WDP4 : Determines the sleep time
+      WDTCSR = (1 << WDIE) | (1 << WDP2) | (1 << WDP1); 
       break;
 
     default: // 8  
@@ -58,9 +59,9 @@ void Timer::deepSleep(){
   cli();
   sleep_enable();
   Wire.end(); // Kills i2c
-  set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN); // Disables most functionalities -> Energy save
   sei();
-  sleep_cpu(); // Waits until Controller wakes up -> See ISR in .ino file
+  sleep_cpu(); // Waits until Controller wakes up
   sleep_disable();
   Wire.begin();
 }

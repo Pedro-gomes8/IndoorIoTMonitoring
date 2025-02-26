@@ -37,7 +37,7 @@ int Sensors::measure(measurement_t* data){
   data->temperature = this->si.readTemperature();
 
   if (! this->sgp.IAQmeasure()) {
-    // Serial.println("Measurement failed");
+    // Measurement failed
     return -1;
   }
 
