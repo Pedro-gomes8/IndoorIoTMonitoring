@@ -70,8 +70,26 @@ ISR(WDT_vect){
 
 
 
+void handleMeasurement(){
+  static short cycles = 0;
+    if (cycles == 7){ // Measure: Base sleep of 8 seconds -> 8x7 = 56 secs =~ 1min. Speed of 4 = 28secs.
+      measurement_t measure;
+      sensors.measure(&measure);
+      if (!buffer.save_measurement(&measure))
+      {
+        Serial.println("FAILED TO SAVE");
+      }
+      print_measurement(&measure);
+      cycles = 0;
+      buffer.send_BT_data(Bluetooth, 20);
+    } else cycles++;
+}
+
+
 void loop() {
 
+  // TO SHOW ON DEMO
+  // Send data every 3 new measures to show on demo: Faster measurement, faster data flow
   measurement_t measure;
   sensors.measure(&measure);
   if(! buffer.save_measurement(&measure)){
@@ -80,19 +98,13 @@ void loop() {
   Sleep.deepSleep();
   delay(2000);
   // Serial.println("OK");
-  if (buffer.buffer_pos == 3){ // Send data every 3 new measures to show on demo
+  if (buffer.buffer_pos == 3){ 
     buffer.send_BT_data();
-  }
+  } 
+  // END OF DEMO CODE
 
-  
-  // if (Bluetooth.available()) {
-  //   w = Bluetooth.readString();
-  //   Serial.println(w);  //PC
-  //   delay(10);
-  //   //commands with Serial.println(); show on pc serial monitor
-  // }
-
-  
+  // NON DEMO Code (Production code):
+  // handleMeasurement();
 
 
   Sleep.reset();
